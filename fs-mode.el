@@ -85,8 +85,15 @@
   "Mount file system"
   )
 
-(defun fs-umount ()
-  ""
+(defun fs-umount (name)
+  "Umount a mount point of file system."
+  (interactive (let ((id (tabulated-list-get-id))
+                     result)
+                 (setq result (completing-read 
+                               (concat "Default umonut point [" id "]: ")
+                               tabulated-list-entries nil t nil nil id))
+                 (list result)))
+  (message "%s" name)
   )
 
 (defun fs-warning-p (percent)
@@ -132,7 +139,7 @@
                  )))
           ))
     (dolist (p fs-mode-all-list)
-      (push (list nil
+      (push (list (plist-get p :mounton)
                   (vector 
                    (plist-get p :filesystem)
                    (plist-get p :size)

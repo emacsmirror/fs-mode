@@ -1,4 +1,6 @@
 fs-mode
 =======
 
-file system menagement mode for emacs
+Linux file system management mode for emacs
+
+

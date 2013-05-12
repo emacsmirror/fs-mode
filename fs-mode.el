@@ -78,8 +78,24 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "m") 'fs-mount)
     (define-key map (kbd "u") 'fs-umount)
+    (define-key map (kbd "f") 'fs-refresh)
     map)
   "fs-mode keymap.")
+
+(defun fs-refresh ()
+  "Refresh fs-mode display."
+  (interactive)
+  (let ((buffer (get-buffer
+                 (or fs-mode-buffer-name "*fs-mode*"))))
+    ;;(message "get buffer name: %s" buffer)
+    (when (bufferp buffer) 
+      (with-current-buffer buffer
+        (fs-mode-refresh)
+        (tabulated-list-print))
+      (pop-to-buffer buffer)
+      )
+    ) 
+)
 
 (defun fs-mount ()
   "Mount file system"

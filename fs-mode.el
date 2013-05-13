@@ -75,6 +75,48 @@
 (defvar fs-mode-all-list nil
   "All result after parser.")
 
+(defvar fs-mode-ecryptfs-regexp-1
+  "Select key type\\(.*\\)\n.*\\(1).*\\)\n.*\\(2).*\\)\n.*\\(3).*\\)\n.*\\(4).*\\)\n"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-2
+  "PKCS.*Serialized ID:"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-3
+  "PEM key file \\[\\(.*\\)\\]:"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-4 
+  (regexp-opt '("tspi_uuid:"))
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-5
+  "Select cipher\\(.*\\)\n.*\\(1).*\\)\n.*\\(2).*\\)\n.*\\(3).*\\)\n.*\\(4).*\\)\n.*\\(5).*\\)\n.*\\(6).*\\)\n"
+  "Regexp matching prompts for excryptfs."
+  )
+
+(defvar fs-mode-ecryptfs-regexp-6
+  "Select key bytes\\(.*\\)\n.*\\(1).*\\)\n.*\\(2).*\\)\n.*\\(3).*\\)\n"
+  "Regexp matching prompts for excryptfs."
+  )
+
+(defvar fs-mode-ecryptfs-regexp-7
+  "Enable plaintext passthrough (y/n)"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-8
+  "Enable filename encryption (y/n)"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-ecryptfs-regexp-9 
+  "Filename Encryption Key (FNEK) Signature \\[\\(.*\\)\\]:"
+  "Regexp matching prompts for excryptfs.")
+
+(defvar fs-mode-fs-type-collection
+  '("ecryptfs" "ext4" "ext3" "fat")
+  "Collection of file system types used for completing-read.")
+
 (defvar fs-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "m") 'fs-mount)
@@ -112,16 +154,123 @@
                      device
                      path
                      type)
-                 (setq device (completing-read 
-                           "Device name: " nil))
-                 (setq path (completing-read 
+                 (setq device (read-file-name
+                           "Device name: " id id t))
+                 (setq path (read-directory-name
                              (concat "Default mount point [" id "]: ")
-                             tabulated-list-entries nil t  nil nil id))
+                             id id t))
                  (setq type (completing-read
                              "Default filesystem type: "
-                             nil))
+                             fs-mode-fs-type-collection
+                             ))
                  (list device path type)))
   (message "%s %s %s" device path type)
+  (let ((cmd (if (> (string-width type) 0) 
+                 (concat "mount -t " type " " device " " path)
+               (concat "mount " device " " path))))
+    (message "%s" cmd)
+    (root-cmd cmd)
+    )
+  )
+
+(defun fs-mount-ecryptfs-hook (str)
+  "hook for mount ecryptfs."
+  (cond ((string-match fs-mode-ecryptfs-regexp-1 str)
+         (let ((select1 (match-string 2 str))
+               (select2 (match-string 3 str))
+               (select3 (match-string 4 str))
+               (select4 (match-string 5 str))
+               (proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (message "before while null.")
+           (while (null result)
+             (message "null result.")
+             (setq result (completing-read "Select key type to use: " `(,select1 ,select2 ,select3 ,select4)))
+             (unless (string-match "^\\([1-4]\\)$" result)
+               (setq result nil)))
+           (if (processp proc) 
+               (process-send-string proc (concat result "\n")))
+           ))
+        ((string-match fs-mode-ecryptfs-regexp-2 str)
+         (let ((proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (read-string str)))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        ((string-match fs-mode-ecryptfs-regexp-3 str)
+         (let ((default (match-string 1 str))
+               (proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (read-file-name "PEM key file " 
+                                          default default t))
+             )
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        ((string-match fs-mode-ecryptfs-regexp-4 str)
+         (let ((proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (read-string str)))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))
+           ))
+        ((string-match fs-mode-ecryptfs-regexp-5 str)
+         (let ((select1 (match-string 2 str))
+               (select2 (match-string 3 str))
+               (select3 (match-string 4 str))
+               (select4 (match-string 5 str))
+               (select5 (match-string 6 str))
+               (select6 (match-string 7 str))
+               (proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (set result (completing-read "Select cipher: " 
+                                          `(,select1 ,select2 ,select3 ,select4 ,select5 ,select6)))
+             (unless (string-match "^\\([1-6]\\)$" result)
+               (setq result nil)))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n"))))
+         )
+        ((string-match fs-mode-ecryptfs-regexp-6 str)
+         (let ((select1 (match-string 2 str))
+               (select2 (match-string 3 str))
+               (select3 (match-string 4 str))
+               (proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (completing-read "Select key bytes: " 
+                                          `(,select1 ,select2 ,select3)))
+             (unless (string-match "^\\([1-3]\\)$" result)
+               (setq result nil)))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        ((string-match fs-mode-ecryptfs-regexp-7 str)
+         (let ((proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (completing-read str 
+                                           '("y" "n") nil t "y" nil "y")))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        ((string-match fs-mode-ecryptfs-regexp-8 str)
+         (let ((proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (completing-read str
+                                           '("y" "n") nil t "y" nil "y")))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        ((string-match fs-mode-ecryptfs-regexp-9 str)
+         (let ((default (match-string 1 str))
+               (proc (get-process (or root-cmd-proc-name "*root-proc*")))
+               result)
+           (while (null result)
+             (setq result (read-string str default nil default)))
+           (if (processp proc)
+               (process-send-string proc (concat result "\n")))))
+        )
   )
 
 (defun fs-umount (path)
@@ -203,7 +352,9 @@
                                ("Mounted on" 20 t)])
   (setq tabulated-list-sort-key nil)
   (add-hook 'tabulated-list-revert-hook 'fs-mode-refresh nil t)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+  (make-local-variable 'root-cmd-output-filter-hooks)
+  (add-to-list 'root-cmd-output-filter-hooks 'fs-mount-ecryptfs-hook))
 
 ;;;###autoload
 (defun list-fs-usage ()

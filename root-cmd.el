@@ -44,12 +44,15 @@
 (defun root-cmd-send-password (prompt)
   "send password to process"
   ;(message "begin root-cmd-send-password")
-  (let ((proc (get-process "*root-proc*")))
+  (let ((proc (get-process (or root-cmd-proc-name "*root-proc*"))))
     (if (processp proc)
         (let ((str (read-passwd prompt)))
           (process-send-string proc (concat str "\n"))
           (sit-for 1)
-          (process-send-string proc (concat root-cmd-command "\n"))))))
+          (when (and (stringp root-cmd-command) (> (string-width root-cmd-command) 0)) 
+            (process-send-string proc (concat root-cmd-command "\n"))
+            (setq root-cmd-command nil))
+          ))))
 
 (defun root-cmd-output-keep-hook (string)
   "keep all cmd output."
@@ -68,7 +71,8 @@
   (let ((buffer (get-buffer-create root-cmd-buffer-name))) 
     (with-current-buffer buffer
       (insert string)
-      (run-hook-with-args 'root-cmd-output-filter-hooks string)))
+      )
+    (run-hook-with-args 'root-cmd-output-filter-hooks string))
   )
 
 (defun root-cmd-sentinel (process event)
@@ -93,7 +97,7 @@
     (setq root-cmd-command command)
     (set-process-filter proc 'root-cmd-filter)
     (set-process-sentinel proc 'root-cmd-sentinel)
-    (message "process-send-string output: %s" (process-send-string proc "su\n"))
+    (process-send-string proc "su\n")
     ))
 
 (defun root-cmd-stop ()

@@ -25,6 +25,7 @@
 ;;; Code:
 
 (require 'tabulated-list)
+(require 'root-cmd)
 
 (defgroup fs-mode nil
   "File System mode"
@@ -79,12 +80,20 @@
     (define-key map (kbd "m") 'fs-mount)
     (define-key map (kbd "u") 'fs-umount)
     (define-key map (kbd "f") 'fs-refresh)
+    (define-key map (kbd "q") 'fs-quit)
     map)
   "fs-mode keymap.")
+
+(defun fs-quit ()
+  "quit fs mode"
+  (interactive)
+  (root-cmd-stop)
+  (quit-window))
 
 (defun fs-refresh ()
   "Refresh fs-mode display."
   (interactive)
+  (root-cmd-stop)
   (let ((buffer (get-buffer
                  (or fs-mode-buffer-name "*fs-mode*"))))
     ;;(message "get buffer name: %s" buffer)
@@ -97,11 +106,25 @@
     ) 
 )
 
-(defun fs-mount ()
+(defun fs-mount (device path &optional type)
   "Mount file system"
+  (interactive (let ((id (tabulated-list-get-id))
+                     device
+                     path
+                     type)
+                 (setq device (completing-read 
+                           "Device name: " nil))
+                 (setq path (completing-read 
+                             (concat "Default mount point [" id "]: ")
+                             tabulated-list-entries nil t  nil nil id))
+                 (setq type (completing-read
+                             "Default filesystem type: "
+                             nil))
+                 (list device path type)))
+  (message "%s %s %s" device path type)
   )
 
-(defun fs-umount (name)
+(defun fs-umount (path)
   "Umount a mount point of file system."
   (interactive (let ((id (tabulated-list-get-id))
                      result)
@@ -109,7 +132,11 @@
                                (concat "Default umonut point [" id "]: ")
                                tabulated-list-entries nil t nil nil id))
                  (list result)))
-  (message "%s" name)
+  (message "%s" path)
+  (root-cmd (concat "umount " path))
+  ;(sit-for 2)
+  ;(root-cmd-stop)
+  ;(fs-refresh)
   )
 
 (defun fs-warning-p (percent)

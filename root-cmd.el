@@ -80,6 +80,7 @@
   (message "Process %s received event %s." process event)
   )
 
+;;;###autoload
 (defun root-cmd (command)
   "output command as root process."
 ;;  (interactive)
@@ -100,6 +101,7 @@
     (process-send-string proc "su\n")
     ))
 
+;;;###autoload
 (defun root-cmd-stop ()
   "Stop root cmd process."
   (interactive)
@@ -110,6 +112,7 @@
     (if (bufferp buffer)
         (kill-buffer buffer))))
 
+;;;###autoload
 (defun root-cmd-output ()
   "return the cmd output."
   (interactive)

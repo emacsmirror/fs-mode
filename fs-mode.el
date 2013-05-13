@@ -357,7 +357,7 @@
   (add-to-list 'root-cmd-output-filter-hooks 'fs-mount-ecryptfs-hook))
 
 ;;;###autoload
-(defun list-fs-usage ()
+(defun list-fs ()
   "list all file system usage"
   (interactive)
   (let ((buffer (get-buffer-create 

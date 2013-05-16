@@ -226,7 +226,7 @@
                (proc (get-process (or root-cmd-proc-name "*root-proc*")))
                result)
            (while (null result)
-             (set result (completing-read "Select cipher: " 
+             (setq result (completing-read "Select cipher: " 
                                           `(,select1 ,select2 ,select3 ,select4 ,select5 ,select6)))
              (unless (string-match "^\\([1-6]\\)$" result)
                (setq result nil)))

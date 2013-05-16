@@ -122,9 +122,30 @@
     (define-key map (kbd "m") 'fs-mount)
     (define-key map (kbd "u") 'fs-umount)
     (define-key map (kbd "f") 'fs-refresh)
+    (define-key map (kbd "RET") 'fs-goto-directory)
     (define-key map (kbd "q") 'fs-quit)
     map)
   "fs-mode keymap.")
+
+(defun fs-goto-directory (directory)
+  "goto directory in eshell mode."
+  (interactive (let ((id (tabulated-list-get-id))
+                     default)
+                 (setq default (read-directory-name (concat "Default [" id "]: ") 
+                                                    id id t))
+                 (list default)))
+  (require 'eshell)
+  (let ((buffer (get-buffer eshell-buffer-name))
+        )
+    (unless buffer
+      (eshell)
+      (setq buffer (get-buffer eshell-buffer-name)))
+    (with-current-buffer buffer
+      (setq default-directory directory)
+      (eshell-send-input))
+    (pop-to-buffer buffer)
+    )
+  )
 
 (defun fs-quit ()
   "quit fs mode"
